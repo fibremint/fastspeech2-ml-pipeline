@@ -4,6 +4,9 @@ The dockerized components would be used at MLOps pipeline that build on Kubeflow
 ## Strucutres
 * workflow: GitHub Action that does CI to the components
 * components: Components source
+## Setup Environment
+If you cloned this repository, you should set Docker Hub access token and set secret values in your repository secrets to run CI workflow.
+Instructions are described at https://docs.docker.com/ci-cd/github-actions/
 
 # References
 * Original codes: [AppleHolic/FastSpeech2](https://github.com/AppleHolic/FastSpeech2)
