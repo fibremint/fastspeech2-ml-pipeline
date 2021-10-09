@@ -1,4 +1,4 @@
-name: Push changed components to Docker Hub
+name: Component CI
 
 # Controls when the action will run. 
 on:
