@@ -1,0 +1,8 @@
+inflect
+Unidecode
+librosa
+numpy
+pandas
+scikit-learn
+tqdm
+joblib
