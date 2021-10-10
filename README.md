@@ -1,4 +1,4 @@
-# FastSpeech2 Pipeline Component
+# FastSpeech2 Pipeline
 ![CI](https://github.com/lunarbridge/fastspeech2-pipeline-component/actions/workflows/ci.yml/badge.svg)
 
 This repository does dockerize modules in [FastSpeech2](https://github.com/AppleHolic/FastSpeech2)  and push them to Docker Hub.
