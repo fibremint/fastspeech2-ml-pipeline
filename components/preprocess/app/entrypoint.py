@@ -1,9 +1,10 @@
-from opts import opt
-from utils.tools import parse_kwargs
 import json
-from preprocessor import Preprocessor
 import os
 import pathlib
+
+from opts import opt
+from preprocessor import Preprocessor
+from utils.tools import parse_kwargs
 
 
 def main(opt):

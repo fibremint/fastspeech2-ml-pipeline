@@ -1,19 +1,20 @@
+import glob
+import json
 import os
 import random
-import json
+from multiprocessing import cpu_count
+from typing import Any, Dict
+
 import librosa
 import numpy as np
 import pyworld as pw
 import tgt
 import torch
-import glob
-from multiprocessing import cpu_count
-from typing import Any, Dict
 from joblib import Parallel, delayed
 from scipy.interpolate import interp1d
 from sklearn.preprocessing import StandardScaler
-from tqdm import tqdm
 from speech_interface.encoders import MelSpectrogram
+from tqdm import tqdm
 
 
 def remove_outlier(values):
