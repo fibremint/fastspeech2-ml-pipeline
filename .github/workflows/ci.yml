@@ -32,6 +32,8 @@ jobs:
               - 'components/prepare-align/**'
             prepare-data:
               - 'components/prepare-data/**'
+            preprocess:
+              - 'components/preprocess/**'
 
       - name: Check updated component is empty
         id: check
