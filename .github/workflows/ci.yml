@@ -28,6 +28,8 @@ jobs:
           filters: |
             mfa-aligner:
               - 'components/mfa-aligner/**'
+            prepare-align:
+              - 'components/prepare-align/**'
             prepare-data:
               - 'components/prepare-data/**'
 
