@@ -1,5 +1,5 @@
 # FastSpeech2 Pipeline Component
-[![CI](https://github.com/lunarbridge/fastspeech2-pipeline-component/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/lunarbridge/fastspeech2-pipeline-component/actions/workflows/ci.yml)
+![CI](https://github.com/lunarbridge/fastspeech2-pipeline-component/actions/workflows/ci.yml/badge.svg)
 
 This repository does dockerize modules in [FastSpeech2](https://github.com/AppleHolic/FastSpeech2)  and push them to Docker Hub.
 The dockerized components would be used at MLOps pipeline that build on Kubeflow.
