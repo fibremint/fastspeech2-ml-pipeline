@@ -23,7 +23,7 @@ def main(opt):
     is_new_data_exist = raw_data_path.exists()
     if not is_new_data_exist:
         # sys.exit('WARN: raw data path is not exists. aborted.')
-        with open(f'/tmp/{opt.fs2_dupl_data_relpaths_filename}', 'w') as f:
+        with open(f'/tmp/{opt.fs2_data_relpaths_filename}', 'w') as f:
             json.dump([], f)
 
         with open(f'/tmp/{opt.fs2_dupl_data_relpaths_filename}', 'w') as f:
