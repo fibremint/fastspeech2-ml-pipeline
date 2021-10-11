@@ -18,6 +18,7 @@ def main(opt):
     if not base_path.exists():
         sys.exit('ERR: base path not exists')
 
+    curr_data_path = str(None)
     raw_data_path = base_path / opt.raw_data_path
     is_new_data_exist = raw_data_path.exists()
     if not is_new_data_exist:
@@ -73,11 +74,10 @@ def main(opt):
 
                 json.dump(duplicated_relpaths, f)
 
-        # save values to set output variable
-        with open('/tmp/curr-data-path', 'w') as f:
-            f.write(str(curr_data_path))
+    # save values to set output variable
+    with open('/tmp/curr-data-path', 'w') as f:
+        f.write(str(curr_data_path))
 
-    # save values to set is new data exists
     with open('/tmp/is-new-data-exist', 'w') as f:
         f.write(str(is_new_data_exist))
 
