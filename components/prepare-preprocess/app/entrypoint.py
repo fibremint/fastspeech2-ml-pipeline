@@ -64,7 +64,7 @@ def main(opt):
             with open(f'{curr_data_path}/{opt.fs2_dupl_data_relpaths_filename}', 'w') as f:
                 duplicated_relpaths = sorted(list(duplicated_relpaths))
 
-                json.dump(duplicated_relpaths, f)
+                json.dump(duplicated_relpaths, f, indent=2)
 
         # write not duplicated relpaths
         not_duplicated_relpaths = curr_data_relpaths.difference(relpaths)
@@ -76,6 +76,11 @@ def main(opt):
                 json.dump(not_duplicated_relpaths, f)
         else:
             print('WARN: all of the file names are duplicated. current workflow will be aborted.')
+            shutil.copy(f'{curr_data_path}/{opt.fs2_dupl_data_relpaths_filename}', f'/tmp/{opt.fs2_dupl_data_relpaths_filename}')
+
+            finished_data_path = curr_data_path.parent / '-'.join(curr_data_path.stem.split('-')[:-1])
+            shutil.move(curr_data_path, finished_data_path)
+            
             is_new_data_exist = False
 
     # save values to set output variable
