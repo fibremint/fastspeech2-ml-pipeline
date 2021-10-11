@@ -34,6 +34,8 @@ jobs:
               - 'components/prepare-preprocess/**'
             preprocess:
               - 'components/preprocess/**'
+            train:
+              - 'components/train/**'
 
       - name: Check updated component is empty
         id: check
