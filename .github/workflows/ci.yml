@@ -30,8 +30,8 @@ jobs:
               - 'components/mfa-aligner/**'
             prepare-align:
               - 'components/prepare-align/**'
-            prepare-data:
-              - 'components/prepare-data/**'
+            prepare-preprocess:
+              - 'components/prepare-preprocess/**'
             preprocess:
               - 'components/preprocess/**'
 
