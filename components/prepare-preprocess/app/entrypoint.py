@@ -54,30 +54,29 @@ def main(opt):
                 relpaths.update(set(curr_relpaths))
         
         # write current data relpaths
-        
         curr_data_relpaths = set(curr_data_wav_relpaths) | set(curr_data_txt_relpaths)
 
         # write duplicated relpaths
-        duplicated_relpaths = curr_data_relpaths.intersection(relpaths)
-        if duplicated_relpaths:
-            print('WARN: some of the data are duplicated. write duplicated data path.')
-            with open(f'{curr_data_path}/{opt.fs2_dupl_data_relpaths_filename}', 'w') as f:
-                duplicated_relpaths = sorted(list(duplicated_relpaths))
+        duplicated_file_relpaths = curr_data_relpaths.intersection(relpaths)
+        if duplicated_file_relpaths:
+            print('WARN: some of the data are duplicated')
 
-                json.dump(duplicated_relpaths, f, indent=2)
+        with open(f'{curr_data_path}/{opt.fs2_dupl_data_relpaths_filename}', 'w') as f:
+            duplicated_file_relpaths = sorted(list(duplicated_file_relpaths))
+            json.dump(duplicated_file_relpaths, f, indent=2)
+        
+        shutil.copy(f'{curr_data_path}/{opt.fs2_dupl_data_relpaths_filename}', f'/tmp/{opt.fs2_dupl_data_relpaths_filename}')
 
         # write not duplicated relpaths
-        not_duplicated_relpaths = curr_data_relpaths.difference(relpaths)
-        if not_duplicated_relpaths:
-            print('INFO: write relative data path')
-            with open(f'{curr_data_path}/{opt.fs2_data_relpaths_filename}', 'w') as f:
-                not_duplicated_relpaths = sorted(list(not_duplicated_relpaths))
+        preprocess_target_relpaths = curr_data_relpaths.difference(relpaths)
+        with open(f'{curr_data_path}/{opt.fs2_data_relpaths_filename}', 'w') as f:
+            preprocess_target_relpaths = sorted(list(preprocess_target_relpaths))
+            json.dump(preprocess_target_relpaths, f, indent=2)
 
-                json.dump(not_duplicated_relpaths, f)
-        else:
+        shutil.copy(f'{curr_data_path}/{opt.fs2_data_relpaths_filename}', f'/tmp/{opt.fs2_data_relpaths_filename}')
+
+        if not preprocess_target_relpaths:
             print('WARN: all of the file names are duplicated. current workflow will be aborted.')
-            shutil.copy(f'{curr_data_path}/{opt.fs2_dupl_data_relpaths_filename}', f'/tmp/{opt.fs2_dupl_data_relpaths_filename}')
-
             finished_data_path = curr_data_path.parent / '-'.join(curr_data_path.stem.split('-')[:-1])
             shutil.move(curr_data_path, finished_data_path)
             
