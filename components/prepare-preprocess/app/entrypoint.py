@@ -56,14 +56,6 @@ def main(opt):
         # write current data relpaths
         
         curr_data_relpaths = set(curr_data_wav_relpaths) | set(curr_data_txt_relpaths)
-        # write not duplicated relpaths
-        not_duplicated_relpaths = curr_data_relpaths.difference(relpaths)
-        if not_duplicated_relpaths:
-            print('INFO: write relative data path')
-            with open(f'{curr_data_path}/{opt.fs2_data_relpaths_filename}', 'w') as f:
-                not_duplicated_relpaths = sorted(list(not_duplicated_relpaths))
-
-                json.dump(not_duplicated_relpaths, f)
 
         # write duplicated relpaths
         duplicated_relpaths = curr_data_relpaths.intersection(relpaths)
@@ -73,6 +65,18 @@ def main(opt):
                 duplicated_relpaths = sorted(list(duplicated_relpaths))
 
                 json.dump(duplicated_relpaths, f)
+
+        # write not duplicated relpaths
+        not_duplicated_relpaths = curr_data_relpaths.difference(relpaths)
+        if not_duplicated_relpaths:
+            print('INFO: write relative data path')
+            with open(f'{curr_data_path}/{opt.fs2_data_relpaths_filename}', 'w') as f:
+                not_duplicated_relpaths = sorted(list(not_duplicated_relpaths))
+
+                json.dump(not_duplicated_relpaths, f)
+        else:
+            print('WARN: all of the file names are duplicated. current workflow will be aborted.')
+            is_new_data_exist = False
 
     # save values to set output variable
     with open('/tmp/curr-data-path', 'w') as f:
