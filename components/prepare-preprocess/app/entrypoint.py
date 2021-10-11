@@ -16,13 +16,19 @@ def main(opt):
 
     base_path = Path(opt.data_base_path)
     if not base_path.exists():
-        sys.exit('ERR: base path not exists')
+        sys.exit('ERR: base path is not exists')
 
     curr_data_path = str(None)
     raw_data_path = base_path / opt.raw_data_path
     is_new_data_exist = raw_data_path.exists()
     if not is_new_data_exist:
         # sys.exit('WARN: raw data path is not exists. aborted.')
+        with open(f'/tmp/{opt.fs2_dupl_data_relpaths_filename}', 'w') as f:
+            json.dump([], f)
+
+        with open(f'/tmp/{opt.fs2_dupl_data_relpaths_filename}', 'w') as f:
+            json.dump([], f)
+            
         print('WARN: raw data path is not exists. aborted.')
 
     else:
