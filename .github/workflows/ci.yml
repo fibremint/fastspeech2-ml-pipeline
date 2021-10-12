@@ -26,8 +26,14 @@ jobs:
         id: filter
         with:
           filters: |
+            check-deployable:
+              - 'components/check-deployable/**'
+            evaluate:
+              - 'components/evaluate/**'
             mfa-aligner:
               - 'components/mfa-aligner/**'
+            package-model
+              - 'components/package-model/**'
             prepare-align:
               - 'components/prepare-align/**'
             prepare-preprocess:
@@ -36,6 +42,8 @@ jobs:
               - 'components/preprocess/**'
             train:
               - 'components/train/**'
+            update-deploy:
+              - 'components/update-deploy/**'
 
       - name: Check updated component is empty
         id: check
