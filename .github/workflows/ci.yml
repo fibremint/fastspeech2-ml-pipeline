@@ -32,7 +32,7 @@ jobs:
               - 'components/evaluate/**'
             mfa-aligner:
               - 'components/mfa-aligner/**'
-            package-model
+            package-model:
               - 'components/package-model/**'
             prepare-align:
               - 'components/prepare-align/**'
