@@ -116,9 +116,7 @@ class FastSpeech2Handler(BaseHandler):
 
 
     def postprocess(self, inference_output, sample_rate: int = 22050):
-        # pred_wav = self.hifi_gan_model.decode(mel_spectogram.transpose(1, 2)).squeeze()
         audio_data = inference_output.cpu().numpy()
-        # print(inference_output)
 
         save_path = f'/tmp/{uuid.uuid4().hex}.wav'
         sf.write(save_path, audio_data, samplerate=sample_rate, format='WAV')
