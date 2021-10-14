@@ -5,7 +5,6 @@ on:
   push:
      paths:
        - 'docker-images/**'
-       - '.github/workflows/ci_v2.yml'
        
   pull_request:
     branches: [ master ]
@@ -138,7 +137,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: ./components/${{ matrix.package }}
+          context: ./docker-image/standalone/${{ matrix.package }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_PREFIX }}-${{ matrix.package }}:latest
 
@@ -178,7 +177,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: ./components/${{ matrix.package }}
+          context: ./docker-image/base/${{ matrix.package }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_PREFIX }}-${{ matrix.package }}:latest
 
@@ -220,6 +219,6 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: ./components/${{ matrix.package }}
+          context: ./docker-image/depended/${{ matrix.package }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_PREFIX }}-${{ matrix.package }}:latest
