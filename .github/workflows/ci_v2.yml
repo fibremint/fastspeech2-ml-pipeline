@@ -1,0 +1,261 @@
+name: Docker Image CI/CD v2
+
+# Controls when the action will run. 
+on:
+  push:
+     paths:
+       - 'docker-images/**'
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  check-standalone-container-updated:
+    name: Check standalone docker containers are updated
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.filter.outputs.changes }}
+      is_none_of_updates: ${{ steps.check.outputs.is_none_of_updates }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            mfa-align:
+              - 'components/standalone/mfa-align/**'
+
+      - name: Check updated component is empty
+        id: check
+        env:
+          UPDATED: ${{ steps.filter.outputs.changes }}
+        run: |
+          echo UPDATED: $UPDATED
+          if [ "[]" == "$UPDATED" ]; then echo "::set-output name=is_none_of_updates::true"
+          else echo "::set-output name=is_none_of_updates::false"
+          fi
+
+  check-base-container-updated:
+    name: Check base docker containers are updated
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.filter.outputs.changes }}
+      is_none_of_updates: ${{ steps.check.outputs.is_none_of_updates }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            runtime-base:
+              - 'components/base/runtime-base/**'
+
+      - name: Check updated component is empty
+        id: check
+        env:
+          UPDATED: ${{ steps.filter.outputs.changes }}
+        run: |
+          echo UPDATED: $UPDATED
+          if [ "[]" == "$UPDATED" ]; then echo "::set-output name=is_none_of_updates::true"
+          else echo "::set-output name=is_none_of_updates::false"
+          fi
+
+  check-depended-container-updated:
+    name: Check depended docker containers are updated
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.filter.outputs.changes }}
+      is_none_of_updates: ${{ steps.check.outputs.is_none_of_updates }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            evaluate:
+              - 'components/depended/evaluate/**'
+            export-model:
+              - 'components/depended/expot-model/**'
+            prepare-align:
+              - 'components/depended/prepare-align/**'
+            preprocess:
+              - 'components/depended/preprocess/**'
+            torchserve:
+              - 'components/depended/torchserve/**'
+            train:
+              - 'components/depended/train/**'
+
+      - name: Check updated component is empty
+        id: check
+        env:
+          UPDATED: ${{ steps.filter.outputs.changes }}
+        run: |
+          echo UPDATED: $UPDATED
+          if [ "[]" == "$UPDATED" ]; then echo "::set-output name=is_none_of_updates::true"
+          else echo "::set-output name=is_none_of_updates::false"
+          fi
+
+  build-push-standalone-containers:
+    name: Build and push standalone docker images
+    runs-on: ubuntu-latest
+
+    needs: check-standalone-container-updated
+    if: ${{ needs.check-standalone-container-updated.outputs.is_none_of_updates == 'false' }}
+    strategy:
+      matrix:
+        package: ${{ fromJSON(needs.check-updated-components.outputs.images) }}
+
+    env:
+      IMAGE_PREFIX: fs2
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository
+      - uses: actions/checkout@v2
+
+      # setup docker environment
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      # build and push the component image
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: ./components/${{ matrix.package }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_PREFIX }}-${{ matrix.package }}:latest
+
+
+  build-push-base-containers:
+    name: Build and push base docker images
+    runs-on: ubuntu-latest
+
+    needs: check-base-container-updated
+    if: ${{ needs.check-base-container-updated.outputs.is_none_of_updates == 'false' }}
+    strategy:
+      matrix:
+        package: ${{ fromJSON(needs.check-updated-components.outputs.images) }}
+
+    env:
+      IMAGE_PREFIX: fs2
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository
+      - uses: actions/checkout@v2
+
+      # setup docker environment
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      # build and push the component image
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: ./components/${{ matrix.package }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_PREFIX }}-${{ matrix.package }}:latest
+
+
+  build-push-depended-containers:
+    name: Build and push depended docker images
+    runs-on: ubuntu-latest
+
+    needs: build-push-base-containers
+    if: ${{ needs.check-depended-container-updated.outputs.is_none_of_updates == 'false' }}
+    strategy:
+      matrix:
+        package: ${{ fromJSON(needs.check-updated-components.outputs.images) }}
+
+    env:
+      IMAGE_PREFIX: fs2
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository
+      - uses: actions/checkout@v2
+
+      # setup docker environment
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      # build and push the component image
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: ./components/${{ matrix.package }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_PREFIX }}-${{ matrix.package }}:latest
+
+
+  # build-push:
+  #   name: Build and push the image
+  #   runs-on: ubuntu-latest
+
+  #   needs: check-updated-components
+  #   if: ${{ needs.check-updated-components.outputs.is_none_of_updates == 'false' }}
+  #   strategy:
+  #     matrix:
+  #       package: ${{ fromJSON(needs.check-updated-components.outputs.packages) }}
+
+  #   env:
+  #     IMAGE_PREFIX: fs2
+
+  #   # Steps represent a sequence of tasks that will be executed as part of the job
+  #   steps:
+  #     # Checks-out your repository
+  #     - uses: actions/checkout@v2
+
+  #     # setup docker environment
+  #     - name: Set up QEMU
+  #       uses: docker/setup-qemu-action@v1
+
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v1
+        
+  #     - name: Login to DockerHub
+  #       uses: docker/login-action@v1
+  #       with:
+  #         username: ${{ secrets.DOCKERHUB_USERNAME }}
+  #         password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+  #     # build and push the component image
+  #     - name: Build and push
+  #       uses: docker/build-push-action@v2
+  #       with:
+  #         context: ./components/${{ matrix.package }}
+  #         push: ${{ github.event_name != 'pull_request' }}
+  #         tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_PREFIX }}-${{ matrix.package }}:latest
