@@ -18,4 +18,4 @@ WORKDIR /workspace
 
 COPY ./app /workspace/app
 
-ENTRYPOINT [ "python", "app/entrypoint.py" ]
+# ENTRYPOINT [ "python", "app/entrypoint.py" ]
