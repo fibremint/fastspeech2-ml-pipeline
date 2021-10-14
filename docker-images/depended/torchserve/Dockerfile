@@ -18,7 +18,7 @@ RUN apt-get update && \
     python3 ./ts_scripts/install_dependencies.py --cuda=cu111 && \
     rm -rf /var/lib/apt/lists/*
 
-RUN mkdir $HOME/workspace
+RUN mkdir -p $HOME/workspace
 WORKDIR $HOME/workspace
 
 COPY ./requirements.txt /workspace

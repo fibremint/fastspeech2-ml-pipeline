@@ -13,7 +13,7 @@
 # RUN pip install -r requirements.txt
 FROM fibremint/fs2-runtime-base:latest
 
-RUN mkdir /workspace
+RUN mkdir -p /workspace
 WORKDIR /workspace
 
 COPY ./app /workspace/app

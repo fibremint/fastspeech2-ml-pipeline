@@ -23,7 +23,7 @@
 #     rm -rf /var/lib/apt/lists/*
 FROM fibremint/fs2-torchserve
 
-RUN mkdir $HOME/workspace
+RUN mkdir -p $HOME/workspace
 WORKDIR $HOME/workspace
 
 COPY ./app $HOME/workspace/app
