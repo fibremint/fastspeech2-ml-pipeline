@@ -111,7 +111,7 @@ jobs:
     if: ${{ needs.check-standalone-container-updated.outputs.is_none_of_updates == 'false' }}
     strategy:
       matrix:
-        package: ${{ fromJSON(needs.check-updated-components.outputs.images) }}
+        package: ${{ fromJSON(needs.check-standalone-container-updated.outputs.images) }}
 
     env:
       IMAGE_PREFIX: fs2
@@ -151,7 +151,7 @@ jobs:
     if: ${{ needs.check-base-container-updated.outputs.is_none_of_updates == 'false' }}
     strategy:
       matrix:
-        package: ${{ fromJSON(needs.check-updated-components.outputs.images) }}
+        package: ${{ fromJSON(needs.check-base-container-updated.outputs.images) }}
 
     env:
       IMAGE_PREFIX: fs2
@@ -193,7 +193,7 @@ jobs:
     if: ${{ needs.check-depended-container-updated.outputs.is_none_of_updates == 'false' }}
     strategy:
       matrix:
-        package: ${{ fromJSON(needs.check-updated-components.outputs.images) }}
+        package: ${{ fromJSON(needs.check-depended-container-updated.outputs.images) }}
 
     env:
       IMAGE_PREFIX: fs2
