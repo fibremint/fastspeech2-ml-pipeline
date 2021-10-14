@@ -60,10 +60,10 @@ class FastSpeech2Handler(BaseHandler):
 
         self.fastspeech2_model = FastSpeech2(**fast_speech2_config()).to(self.device)
         self.fastspeech2_model.eval()
-        fastspeech2_checkpoint = torch.load(model_checkpoint_path)
+        fastspeech2_checkpoint = torch.load(model_checkpoint_path, map_location=self.device)
         self.fastspeech2_model.load_state_dict(fastspeech2_checkpoint['model'])
 
-        self.hifi_gan_model = InterfaceHifiGAN(model_name='hifi_gan_v1_universal', device='cuda')
+        self.hifi_gan_model = InterfaceHifiGAN(model_name='hifi_gan_v1_universal', device=self.device)
 
 
     def inference(self, model_input):
