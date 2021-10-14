@@ -13,7 +13,9 @@ from dataset import Dataset
 
 from opts import opt
 
-
+# TODO: 
+# * load checkpoint if global checkpoint status exists
+# * set train max_step as loaded_checkpoint_step + max_step
 def main(train_path: str, preprocessed_path: str,
          save_dir: str, save_prefix: str,
          model_name: str, pretrained_path: str = '', num_workers: int = 16,
