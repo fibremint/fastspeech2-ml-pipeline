@@ -11,7 +11,8 @@ RUN apt-get update && \
 WORKDIR /workspace
 COPY ./requirements.txt /workspace
 RUN pip install -r requirements.txt
-RUN pip cache purge
+# pip cache suppots from pip version 20.1b1
+# RUN pip cache purge
 
 RUN python3 -c "import nltk; nltk.download('averaged_perceptron_tagger')"
 RUN python3 -c "from speech_interface.interfaces.hifi_gan import InterfaceHifiGAN; InterfaceHifiGAN(model_name='hifi_gan_v1_universal')"
