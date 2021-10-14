@@ -5,7 +5,7 @@ ENV TZ=Asia/Seoul
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt-get update && \
-    apt-get install -y libsndfile-dev python3.8 python3-pip python3.8-dev build-essential git && \
+    apt-get install -y sudo libsndfile-dev python3.8 python3-pip python3.8-dev build-essential git && \
     rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /workspace
