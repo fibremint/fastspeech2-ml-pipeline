@@ -8,6 +8,7 @@ RUN apt-get update && \
     apt-get install -y sudo libsndfile-dev python3.8 python3-pip python3.8-dev build-essential git && \
     rm -rf /var/lib/apt/lists/*
 
+WORKDIR /workspace
 COPY ./requirements.txt /workspace
 RUN pip install -r requirements.txt
 RUN pip cache purge
