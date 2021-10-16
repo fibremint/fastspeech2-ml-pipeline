@@ -1,0 +1,9 @@
+{
+  "input_path": "./raw-data",
+  "output_path": "./before-align",
+  "sample_rate": 22050,
+  "max_wav_value": 32767.0,
+  "cleaners": ["english_cleaners"],
+  "train_speakers": "configs/vctk_train_speakers.txt",
+  "data_relpaths_filename": "data-relpaths.json"
+}

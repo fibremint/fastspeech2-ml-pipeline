@@ -27,6 +27,6 @@ RUN mfa thirdparty download
 RUN mfa download acoustic english
 
 # run MFA alignment
-COPY ./entrypoint.py /
+# COPY ./entrypoint.py /
 # ref: https://pythonspeed.com/articles/activate-conda-dockerfile/
-ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "aligner", "python", "/entrypoint.py"]
+# ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "aligner", "python", "/entrypoint.py"]

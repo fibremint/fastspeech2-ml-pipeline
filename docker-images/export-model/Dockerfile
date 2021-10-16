@@ -23,9 +23,12 @@
 #     rm -rf /var/lib/apt/lists/*
 FROM fibremint/fs2-torchserve
 
-RUN mkdir -p $HOME/workspace
-WORKDIR $HOME/workspace
+RUN mkdir -p /workspace
+WORKDIR /workspace
 
-COPY ./app $HOME/workspace/app
+ENV PYTHONPATH=/workspace
 
-ENTRYPOINT [ "python", "app/entrypoint.py" ]
+COPY ./app /workspace/app
+
+# ENTRYPOINT [ "python3", "app/entrypoint.py" ]
+# CMD ["bash"]

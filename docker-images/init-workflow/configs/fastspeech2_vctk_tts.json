@@ -1,0 +1,14 @@
+{
+  "train_path": "train.txt",
+  "eval_path": "val.txt",
+  "preprocessed_path": "./preprocessed",
+  "save_dir": "./saved-models",
+  "save_prefix": "fastspeech2_base",
+  "model_name": "fast_speech2_vctk",
+
+  "log_interval": 100,
+  "pitch_min": -1.9287127187455897,
+  "energy_min": -1.375638484954834,
+  "batch_size": 8,
+  "save_interval": 100
+}

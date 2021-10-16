@@ -4,17 +4,20 @@
 # package requirement.txt requires python==3.8
 # FROM python:3.8-buster
 # FROM nvidia/cuda:11.2.0-runtime-ubuntu20.04
-FROM fibremint/fs2-runtime-base:latest
+FROM fibremint/fs2-runtime:latest
 
 # # ref: https://rtfm.co.ua/en/docker-configure-tzdata-and-timezone-during-build/
 # ENV TZ=Asia/Seoul
 # RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # install package dependencies
+ENV TORCHSERVE_VERSION=0.4.2
+
 RUN apt-get update && \
     # apt-get install -y sudo libsndfile-dev python3.8 python3-pip python3.8-dev build-essential git && \
     git clone https://github.com/pytorch/serve pytorch-serve && \
     cd pytorch-serve && \
+    git checkout tags/v${TORCHSERVE_VERSION} && \
     python3 ./ts_scripts/install_dependencies.py --cuda=cu111 && \
     rm -rf /var/lib/apt/lists/*
 

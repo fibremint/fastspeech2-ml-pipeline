@@ -1,0 +1,13 @@
+{
+  "config_path": "./configs",
+  
+  "raw_data_path": "./raw-data",
+  "fs2_base_path": "./fs2-data",
+  "fs2_data_path": "./data",
+  "fs2_data_relpaths": "data-relpaths.json",
+  "fs2_dupl_data_relpaths": "data-dupl-relpaths.json",
+  
+  "vctk_prepare_align_config": "vctk_prepare_align.json",
+  "vctk_preprocess_config": "vctk_preprocess.json",
+  "fastspeech2_vctk_tts_config": "fastspeech2_vctk_tts.json"
+}

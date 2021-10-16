@@ -1,0 +1,3 @@
+git+git://github.com/lunarbridge/fastspeech2@fs2-pipeline#egg=fastspeech2
+git+git://github.com/lunarbridge/pytorch_sound@master#egg=pytorch_sound
+git+git://github.com/lunarbridge/SpeechInterface@main#egg=speech_interface
