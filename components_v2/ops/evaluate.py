@@ -1,7 +1,7 @@
-from typing import NamedTuple
+from typing import List, NamedTuple
 
 
-def evaluate(current_data_path: str) -> NamedTuple(
+def evaluate(current_data_path: str, data_ref_paths: List) -> NamedTuple(
     'evaluate_outputs',
     [
         ('train_finished_data_path', str)
@@ -24,7 +24,7 @@ def evaluate(current_data_path: str) -> NamedTuple(
     from torch.utils.data import DataLoader
 
 
-    def main(eval_path: str, preprocessed_path: str,
+    def main(eval_path: str, preprocessed_paths: str,
             save_dir: str, save_prefix: str,
             model_name: str, pretrained_path: str = None, num_workers: int = 16,
             batch_size: int = 16,
@@ -50,9 +50,12 @@ def evaluate(current_data_path: str) -> NamedTuple(
         else:
             scheduler = None
 
-        dataset = Dataset(eval_path, preprocessed_path, pitch_min=pitch_min, energy_min=energy_min,
+        dataset = Dataset(eval_path, preprocessed_paths, pitch_min=pitch_min, energy_min=energy_min,
                         text_cleaners=['english_cleaners'],
                         batch_size=batch_size, sort=True, drop_last=True, is_reference=is_reference)
+
+        print(f'INFO: length of data: {len(dataset)}')
+
         eval_loader = DataLoader(
             dataset,
             batch_size=batch_size * group_size,
@@ -78,7 +81,7 @@ def evaluate(current_data_path: str) -> NamedTuple(
     config = {
         "train_path": "train.txt",
         "eval_path": "val.txt",
-        "preprocessed_path": "./preprocessed",
+        # "preprocessed_path": "./preprocessed",
         "save_dir": "./saved-models",
         "save_prefix": "fastspeech2_base",
         "model_name": "fast_speech2_vctk",
@@ -99,11 +102,11 @@ def evaluate(current_data_path: str) -> NamedTuple(
 
     # config = parse_kwargs(main, **config)
     current_data_path = Path(current_data_path)
-    config['preprocessed_path'] = current_data_path / config['preprocessed_path']
+    # current_preprocessed_path = current_data_path / config['preprocessed_path']
     config['save_dir'] = current_data_path / config['save_dir']
     # config['pretrained_path'] = current_data_path / config['save_dir'] / 'models' / config['save_prefix'] / 'FastSpeech2'
 
-    evaluated_stats = main(**parse_kwargs(main, **config))
+    evaluated_stats = main(preprocessed_paths=data_ref_paths, **parse_kwargs(main, **config))
 
     optimal_checkpoint_path, optimal_checkpoint_loss = sorted(evaluated_stats.items(), key=operator.itemgetter(1))[0]
     optimal_checkpoint = {
@@ -139,5 +142,5 @@ def evaluate(current_data_path: str) -> NamedTuple(
 
 
 if __name__ == '__main__':
-    res = evaluate('/local-storage/fs2-data/data.2/20211010-105342-intermediate')
+    res = evaluate('/local-storage/fs2-data/data/20211016-031309-intermediate', data_ref_paths=['/local-storage/fs2-data/data/20211016-031309-intermediate/preprocessed', '/local-storage/fs2-data/data/20211016-025750/preprocessed'])
     print(res)
