@@ -1,4 +1,4 @@
-name: Component CI
+name: Container CI/CD
 
 # Controls when the action will run. 
 on:
@@ -26,26 +26,16 @@ jobs:
         id: filter
         with:
           filters: |
-            check-performance:
-              - 'components/check-performance/**'
-            evaluate:
-              - 'components/evaluate/**'
-            mfa-aligner:
-              - 'components/mfa-aligner/**'
-            package-model:
-              - 'components/package-model/**'
-            prepare-align:
-              - 'components/prepare-align/**'
-            prepare-preprocess:
-              - 'components/prepare-preprocess/**'
-            preprocess:
-              - 'components/preprocess/**'
-            train:
-              - 'components/train/**'
-            update-model-deploy:
-              - 'components/update-model-deploy/**'
-            update-optimal-checkpoint:
-              - 'components/update-optimal-checkpoint/**'
+            export-model:
+              - 'components/export-model/**'
+            init-workflow:
+              - 'components/init-workflow/**'
+            mfa-align:
+              - 'components/mfa-align/**'
+            runtime:
+              - 'components/runtime/**'
+            torchserve:
+              - 'components/torchserve/**'
 
       - name: Check updated component is empty
         id: check
