@@ -27,15 +27,15 @@ jobs:
         with:
           filters: |
             export-model:
-              - 'components/export-model/**'
+              - 'docker-images/export-model/**'
             init-workflow:
-              - 'components/init-workflow/**'
+              - 'docker-images/init-workflow/**'
             mfa-align:
-              - 'components/mfa-align/**'
+              - 'docker-images/mfa-align/**'
             runtime:
-              - 'components/runtime/**'
+              - 'docker-images/runtime/**'
             torchserve:
-              - 'components/torchserve/**'
+              - 'docker-images/torchserve/**'
 
       - name: Check updated component is empty
         id: check
