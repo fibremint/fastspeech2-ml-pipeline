@@ -1,24 +1,3 @@
-# import argparse
-# import datetime
-# import glob
-# import json
-# import os
-# import shutil
-# import sys
-# from pathlib import Path
-
-
-# def _parse_):
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('--data-base-path', type=str, default='/mnt')
-#     parser.add_argument('--raw-data-path', type=str, default='./raw-data')
-#     parser.add_argument('--fs2-base-path', type=str, default='./fs2-data')
-#     parser.add_argument('--fs2-data-path', type=str, default='./data')
-#     parser.add_argument('--fs2-data-relpaths-filename', type=str, default='data-relpaths.json')
-#     parser.add_argument('--fs2-dupl-data-relpaths-filename', type=str, default='data-dupl-relpaths.json')
-
-#     return parser.parse_)
-
 from typing import NamedTuple
 
 
@@ -37,11 +16,8 @@ def init_workflow(data_base_path: str) -> NamedTuple(
     import sys
     from pathlib import Path
 
+    from fs2_env import get_paths
     
-    # CONFIG_PATH = './configs'
-    # FS2_DATA_CONFIG_FILENAME = 'fastspeech2_data_path.json'
-    FS2_ENV_FILENAME = 'fastspeech2_env.json'
-
     configs = {
         'fs2_config_path': './configs',
         'raw_data_path': './raw-data',
@@ -57,33 +33,12 @@ def init_workflow(data_base_path: str) -> NamedTuple(
         ['current_data_path', 'is_new_data_exist']
     )
 
-    base_path = Path(data_base_path)
-    if not base_path.exists():
+    paths = get_paths(base_path=data_base_path)
+
+    if not Path(paths['fs2_base']).exists():
         sys.exit('ERR: base path is not exists')
 
-    fs2_base_path = base_path / configs['fs2_base_path']
-    fs2_config_path = fs2_base_path / configs['fs2_config_path']
-    if not fs2_config_path.exists():
-        os.makedirs(fs2_config_path)
-
-    fs2_default_configs = {os.path.basename(config_path): config_path 
-                           for config_path in glob.glob(f'{configs["fs2_config_path"]}/*.json')}
-
-    current_fs2_configs = [os.path.basename(config_path) 
-                           for config_path in glob.glob(f'{fs2_config_path}/*.json')]
-
-    # fs2_env_path = fs2_base_path
-
-    # if not fs2_env_path.exists():
-    #     print(f'INFO: copy FastSpeech2 environment file')
-    #     shutil.copy(FS2_ENV_FILENAME, )
-
-    for default_config_filename, default_config_path in fs2_default_configs.items():
-        if default_config_filename not in current_fs2_configs:
-            print(f'INFO: copy configuration file: "{default_config_filename}"')
-            shutil.copy(default_config_path, f'{fs2_config_path}/{default_config_filename}')
-
-    raw_data_path = base_path / configs['raw_data_path']
+    raw_data_path = Path(data_base_path) / configs['raw_data_path']
     is_new_data_exist = raw_data_path.exists()
     if not is_new_data_exist:            
         print('WARN: raw data path is not exists. aborted.')
@@ -92,32 +47,25 @@ def init_workflow(data_base_path: str) -> NamedTuple(
     else:
         print('INFO: found raw data path')
 
-        # move raw data to intermediate data path
-        fs2_data_path = fs2_base_path / configs['fs2_data_path']
         curr_datetime = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        curr_data_path = fs2_data_path / f'{curr_datetime}-intermediate'
+        curr_data_path = Path(paths['data']) / f'{curr_datetime}-intermediate'
+        paths = get_paths(base_path=data_base_path, current_data_path=str(curr_data_path))
+
         os.makedirs(curr_data_path)
 
         print('INFO: move raw data path to intermediate data path')
-        shutil.move(str(raw_data_path), str(curr_data_path))
+        shutil.move(raw_data_path, paths['raw_data'])
 
         # get relpaths of current data
         # ref: https://stackoverflow.com/questions/44994604/python-glob-os-relative-path-making-filenames-into-a-list
-        curr_raw_data_path = curr_data_path / configs['raw_data_path']
-        print(f'INFO: current raw data path: {curr_raw_data_path}')
-        curr_data_wav_relpaths = [os.path.relpath(data_abspath, curr_raw_data_path)
-                                for data_abspath in glob.glob(f'{curr_raw_data_path}/wav48/*/*.wav')]
-        curr_data_txt_relpaths = [os.path.relpath(data_abspath, curr_raw_data_path)
-                                for data_abspath in glob.glob(f'{curr_raw_data_path}/txt/*/*.txt')]
+        print(f'INFO: current raw data path: {paths["raw_data"]}')
+        curr_data_wav_relpaths = [os.path.relpath(data_abspath, paths["raw_data"])
+                                for data_abspath in glob.glob(f'{paths["raw_data"]}/wav48/*/*.wav')]
+        curr_data_txt_relpaths = [os.path.relpath(data_abspath, paths["raw_data"])
+                                for data_abspath in glob.glob(f'{paths["raw_data"]}/txt/*/*.txt')]  
 
-        if not curr_raw_data_path:
-            print('WARN: empty raw data')
-            print(f'current raw data path: {curr_raw_data_path}')
-            
-
-        # get all of the relpath of data in ./fs2-data/data path 
         relpaths = set()
-        data_relpaths = glob.glob(f'{fs2_data_path}/*/{configs["fs2_data_relpaths_filename"]}')
+        data_relpaths = glob.glob(f'{Path(paths["data"])}/*/{configs["fs2_data_relpaths_filename"]}')
         for data_relpath in data_relpaths:
             with open(data_relpath, 'r') as f:
                 curr_relpaths = json.load(f)
@@ -132,38 +80,27 @@ def init_workflow(data_base_path: str) -> NamedTuple(
         if duplicated_file_relpaths:
             print('WARN: some of the data are duplicated')
 
-        with open(f'{curr_data_path}/{configs["fs2_dupl_data_relpaths_filename"]}', 'w') as f:
+        with open(paths['data_duplicated_relpaths'], 'w') as f:
             duplicated_file_relpaths = sorted(list(duplicated_file_relpaths))
             json.dump(duplicated_file_relpaths, f, indent=2)
         
-        # shutil.copy(f'{curr_data_path}/{configs["fs2_dupl_data_relpaths_filename"]}', f'/tmp/{configs["fs2_dupl_data_relpaths_filename"]}')
-
         # write not duplicated relpaths
         preprocess_target_relpaths = curr_data_relpaths.difference(relpaths)
-        with open(f'{curr_data_path}/{configs["fs2_data_relpaths_filename"]}', 'w') as f:
+        with open(paths['data_relpaths'], 'w') as f:
             preprocess_target_relpaths = sorted(list(preprocess_target_relpaths))
             json.dump(preprocess_target_relpaths, f, indent=2)
 
-        # shutil.copy(f'{curr_data_path}/{configs["fs2_data_relpaths_filename"]}', f'/tmp/{configs["fs2_data_relpaths_filename"]}')
-
         if not preprocess_target_relpaths:
             print('WARN: all of the file names are duplicated. current workflow will be aborted.')
-            finished_data_path = curr_data_path.parent / '-'.join(curr_data_path.stem.split('-')[:-1])
-            shutil.move(curr_data_path, finished_data_path)
+            current_data_path = Path(paths['current_data'])
+            finished_data_path = current_data_path.parent / '-'.join(current_data_path.stem.split('-')[:-1])
+
+            shutil.move(current_data_path, finished_data_path)
             
             is_new_data_exist = False
 
-    # # save values to set output variable
-
-    # from collections import namedtuple
-    # prepare_preprocess_outputs = namedtuple(
-    #     'prepare_preprocess_outputs',
-    #     ['current_data_path', 'is_new_data_exist']
-    # )
-
-    return prepare_preprocess_outputs(str(curr_data_path), is_new_data_exist)
+    return prepare_preprocess_outputs(paths['current_data'], is_new_data_exist)
 
 
 if __name__ == '__main__':
-    from fire import Fire
-    Fire(init_workflow)
+    init_workflow('/local-storage')

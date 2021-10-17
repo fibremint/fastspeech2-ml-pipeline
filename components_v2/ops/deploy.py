@@ -1,7 +1,7 @@
 # ref: https://byeongjo-kim.tistory.com/14
 
 
-def deploy(model_version: str, data_base_path: str) -> None:
+def deploy(model_version: str, data_base_path: str, pvc_name: str) -> None:
     import argparse
     import datetime
     import os
@@ -13,21 +13,18 @@ def deploy(model_version: str, data_base_path: str) -> None:
     from kubernetes import client, config
     from kubernetes.client.exceptions import ApiException
 
-    # VOLUME_MOUNT_PATH = '/opt/storage'
+    from fs2_env import get_paths
+
+    paths = get_paths(base_path=data_base_path)
 
 
     def archive_previous_models(**configs):
-        # model_name_version = model_name + '-' + version
-        fs2_data_path = Path(data_base_path) / configs['fs2_data_path']
-        archive_path = fs2_data_path / configs['model_base_path'] / configs['model_archived_path']
+        if not Path(paths['archived_models']).exists():
+            os.makedirs(paths['archived_models'])
 
-        if not archive_path.exists():
-            os.makedirs(f'{archive_path}')
-
-        mar_paths = glob.glob(f'{fs2_data_path / configs["model_base_path"] / configs["model_store_path"] / configs["model_name"]}' + '*.mar')
+        mar_paths = glob.glob(os.path.join(paths['deployed_models'], configs["model_name"]) + '*.mar')
         mar_paths.sort()
 
-        # TODO: don't archive when length of an archive mar paths is < 0
         if len(mar_paths) < 2:
             print('INFO: a number of model is less than 2. archive will be skipped.')
         else:
@@ -35,12 +32,10 @@ def deploy(model_version: str, data_base_path: str) -> None:
             archive_mar_paths = mar_paths[:-1 * configs['max_model_num']]
 
             for curr_mar_path in archive_mar_paths:
-                shutil.move(f'{curr_mar_path}', f'{archive_path}')
+                shutil.move(curr_mar_path, paths['archived_models'])
 
 
     def serving(model_version, **configs):
-        fs2_data_path = Path(data_base_path) / configs['fs2_data_path']
-
         # config.load_kube_config() # for test
         config.load_incluster_config() # for execute in K8s pod
 
@@ -58,7 +53,7 @@ def deploy(model_version: str, data_base_path: str) -> None:
                     client.V1Volume(
                         name='local-persistent-storage',
                         persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
-                            claim_name=configs['pvc_name']
+                            claim_name=pvc_name
                         )
                     )
                 ],
@@ -69,9 +64,9 @@ def deploy(model_version: str, data_base_path: str) -> None:
                         args=['CUDA_VISIBLE_DEVICES="" torchserve', 
                               '--start',
                               '--model-store',
-                              str(fs2_data_path / configs['model_base_path'] / configs['model_store_path']), 
+                              paths['deployed_models'],                    
                               '--ts-config', 
-                              str(fs2_data_path / torchserve_config_path / configs['torchserve_config_filename'])],
+                              paths['torchserve_config']],
                         image_pull_policy='Always',
                         ports=[
                             client.V1ContainerPort(
@@ -244,16 +239,13 @@ def deploy(model_version: str, data_base_path: str) -> None:
         'model_archived_path': './archived',
         # TODO: set value by argument
         'max_model_num': 1,
-        'pvc_name': 'local-pvc',
+        # 'pvc_name': 'local-pvc',
         'prediction_port': 9000,
         'management_port': 9001,
         'metric_port': 9002
     }
 
-    fs2_data_path = Path(data_base_path) / configs['fs2_data_path']
-    torchserve_config_path = fs2_data_path / configs['torchserve_config_path']
-    if not torchserve_config_path.exists():
-        os.makedirs(torchserve_config_path)
+    os.makedirs(paths['configs'], exist_ok=True)
 
     torchserve_config = \
         f"inference_address=http://0.0.0.0:{configs['prediction_port']}\n" \
@@ -263,7 +255,7 @@ def deploy(model_version: str, data_base_path: str) -> None:
         f"install_py_dep_per_module=true\n" \
         f"load_models=all\n"
 
-    with open(f'{torchserve_config_path / configs["torchserve_config_filename"]}', 'w') as f:
+    with open(paths['torchserve_config'], 'w') as f:
         f.write(torchserve_config)
     
     archive_previous_models(**configs)
@@ -271,4 +263,4 @@ def deploy(model_version: str, data_base_path: str) -> None:
 
 
 if __name__ == '__main__':
-    deploy(model_version='test', data_base_path='/local-storage')
+    deploy(model_version='test', data_base_path='/local-storage', pvc_name='local-pvc')

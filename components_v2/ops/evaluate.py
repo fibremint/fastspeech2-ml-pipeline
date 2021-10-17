@@ -1,7 +1,7 @@
 from typing import List, NamedTuple
 
 
-def evaluate(current_data_path: str, data_ref_paths: List, eval_max_step: int, batch_size: int) -> NamedTuple(
+def evaluate(data_base_path: str, current_data_path: str, data_ref_paths: List, eval_max_step: int, batch_size: int) -> NamedTuple(
     'evaluate_outputs',
     [
         ('train_finished_data_path', str)
@@ -20,12 +20,16 @@ def evaluate(current_data_path: str, data_ref_paths: List, eval_max_step: int, b
     from fastspeech2.dataset import Dataset
     from fastspeech2.trainers.evaluator import Evaluator
     from fastspeech2.utils.tools import parse_kwargs
+    from fs2_env import get_paths
     from pytorch_sound.models import build_model
     from torch.utils.data import DataLoader
 
 
+    paths = get_paths(base_path=data_base_path, current_data_path=current_data_path)
+
+
     def main(eval_path: str, preprocessed_paths: str,
-            save_dir: str, save_prefix: str,
+            train_output: str, save_prefix: str,
             model_name: str, pretrained_path: str = None, num_workers: int = 16,
             batch_size: int = 16,
             pitch_feature: str = 'phoneme', energy_feature: str = 'phoneme',
@@ -70,7 +74,7 @@ def evaluate(current_data_path: str, data_ref_paths: List, eval_max_step: int, b
             None, eval_loader,
             max_step=max_step, save_interval=save_interval,
             log_interval=log_interval, pitch_feature=pitch_feature, energy_feature=energy_feature,
-            save_dir=save_dir, save_prefix=save_prefix, grad_clip=grad_clip, grad_norm=grad_norm,
+            save_dir=train_output, save_prefix=save_prefix, grad_clip=grad_clip, grad_norm=grad_norm,
             pretrained_path=pretrained_path, sr=sr,
             scheduler=scheduler, seed=seed, is_reference=is_reference
         ).run()
@@ -79,10 +83,10 @@ def evaluate(current_data_path: str, data_ref_paths: List, eval_max_step: int, b
 
 
     config = {
-        "train_path": "train.txt",
+        # "train_path": "train.txt",
         "eval_path": "val.txt",
         # "preprocessed_path": "./preprocessed",
-        "save_dir": "./saved-models",
+        # "save_dir": "./saved-models",
         "save_prefix": "fastspeech2_base",
         "model_name": "fast_speech2_vctk",
 
@@ -93,20 +97,15 @@ def evaluate(current_data_path: str, data_ref_paths: List, eval_max_step: int, b
         "save_interval": 100,
         # "max_step": 10,
 
-        "checkpoint_stat_path": './checkpoint-status.json',
-        "optimal_checkpoint_stat_path": "./optimal-checkpoint-status.json"
+        # "checkpoint_stat_path": './checkpoint-status.json',
+        # "optimal_checkpoint_stat_path": "./optimal-checkpoint-status.json"
     }
 
     torch.backends.cudnn.benchmark = True
     torch.multiprocessing.set_sharing_strategy('file_system')
 
-    # config = parse_kwargs(main, **config)
-    current_data_path = Path(current_data_path)
-    # current_preprocessed_path = current_data_path / config['preprocessed_path']
-    config['save_dir'] = current_data_path / config['save_dir']
-    # config['pretrained_path'] = current_data_path / config['save_dir'] / 'models' / config['save_prefix'] / 'FastSpeech2'
-
     evaluated_stats = main(preprocessed_paths=data_ref_paths, max_step=eval_max_step, batch_size=batch_size,
+                           train_output=paths['train_output'],
                            **parse_kwargs(main, **config))
 
     optimal_checkpoint_path, optimal_checkpoint_loss = sorted(evaluated_stats.items(), key=operator.itemgetter(1))[0]
@@ -115,15 +114,11 @@ def evaluate(current_data_path: str, data_ref_paths: List, eval_max_step: int, b
         'loss': optimal_checkpoint_loss
     }
 
-    with open(os.path.join(current_data_path, config["checkpoint_stat_path"]), 'w') as f:
+    with open(paths['checkpoint_status'], 'w') as f:
         json.dump(evaluated_stats, f, indent=2)
 
-    # shutil.copy(os.path.join(current_data_path, checkpoint_stat_path), os.path.join('/tmp', checkpoint_stat_path))
-
-    with open(os.path.join(current_data_path, config["optimal_checkpoint_stat_path"]), 'w') as f:
+    with open(paths['optimal_checkpoint_status'], 'w') as f:
         json.dump(optimal_checkpoint, f, indent=2)
-
-    # shutil.copy(os.path.join(current_data_path, optimal_checkpoint_stat_path), os.path.join('/tmp', optimal_checkpoint_stat_path))
 
     current_data_path = Path(current_data_path)
     finished_data_path = current_data_path.parent / '-'.join(current_data_path.stem.split('-')[:-1])
@@ -138,10 +133,16 @@ def evaluate(current_data_path: str, data_ref_paths: List, eval_max_step: int, b
     return evaluate_outputs(str(finished_data_path))
 
 
-    # with open('/tmp/finished-data-path.txt', 'w') as f:
-    #     f.write(str(finished_data_path))
-
-
 if __name__ == '__main__':
-    res = evaluate('/local-storage/fs2-data/data/20211016-031309-intermediate', data_ref_paths=['/local-storage/fs2-data/data/20211016-031309-intermediate/preprocessed', '/local-storage/fs2-data/data/20211016-025750/preprocessed'])
+    res = evaluate(data_base_path='/local-storage', 
+                   current_data_path='/opt/storage/fs2-data/data/20211017-111713-intermediate', 
+                   eval_max_step=10,
+                   batch_size=8,
+                   data_ref_paths=[
+
+  "/opt/storage/fs2-data/data/20211017-111713-intermediate/preprocessed",
+  "/opt/storage/fs2-data/data/20211016-192849/preprocessed",
+  "/opt/storage/fs2-data/data/20211017-012441/preprocessed"
+
+])
     print(res)

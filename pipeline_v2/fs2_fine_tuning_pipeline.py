@@ -14,9 +14,8 @@ def print_op(msg) -> None:
 
 
 def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_image_prefix, storage_mount_path, compiled_component_output_path):
-    # TODO: train, eval with argument
     @dsl.pipeline(name='fs2 fine tuning')
-    def pipeline(train_max_step: int = 1000, eval_max_step: int = 1000, batch_size: int = 8, model_save_interval: int = 200):
+    def pipeline(train_max_step: int = 5000, eval_max_step: int = 200, batch_size: int = 8, model_save_interval: int = 100):
         ops = load_ops(docker_hub_usename=docker_hub_username,
                        docker_image_prefix=docker_image_prefix)
 
@@ -27,7 +26,8 @@ def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_ima
         })
         with dsl.Condition(init_workflow_task.outputs['is_new_data_exist'] == True, name='new-data-exists'):
             # prepare align
-            prepare_align_task = ops.prepare_align(current_data_path=init_workflow_task.outputs['current_data_path'],
+            prepare_align_task = ops.prepare_align(data_base_path=storage_mount_path,
+                                                   current_data_path=init_workflow_task.outputs['current_data_path'],
                                                    dataset_name='vctk')
             prepare_align_task.add_pvolumes({
                 storage_mount_path: dsl.PipelineVolume(pvc=storage_pvc_name)
@@ -57,7 +57,8 @@ def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_ima
             train_task.set_gpu_limit(1)
             train_task.after(preprocess_task)
             # evaluate
-            evaluate_task = ops.evaluate(current_data_path=init_workflow_task.outputs['current_data_path'],
+            evaluate_task = ops.evaluate(data_base_path=storage_mount_path,
+                                         current_data_path=init_workflow_task.outputs['current_data_path'],
                                          data_ref_paths=train_task.outputs['data_ref_paths'],
                                          eval_max_step=eval_max_step, batch_size=batch_size)
             evaluate_task.add_pvolumes({
@@ -89,7 +90,8 @@ def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_ima
                 export_model_task.after(update_optimal_checkpoint)
                 # deploy
                 deploy_task = ops.deploy(data_base_path=storage_mount_path,
-                                         model_version=export_model_task.outputs['model_version'])
+                                         model_version=export_model_task.outputs['model_version'],
+                                         pvc_name=storage_pvc_name)
                 deploy_task.add_pvolumes({
                     storage_mount_path: dsl.PipelineVolume(pvc=storage_pvc_name)
                 })
