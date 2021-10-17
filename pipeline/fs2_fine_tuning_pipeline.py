@@ -5,7 +5,7 @@ from pathlib import Path
 
 from kfp import compiler, components, dsl
 
-from components_v2.util import load_ops
+from components.util import load_ops
 
 
 @components.func_to_container_op
