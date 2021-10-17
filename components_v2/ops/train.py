@@ -5,7 +5,7 @@ from typing import List, NamedTuple
 from torch.utils import data
 
 # TODO: return preprocessed paths
-def train(data_base_path: str, current_data_path: str) -> NamedTuple(
+def train(data_base_path: str, current_data_path: str, train_max_step: int, batch_size: int, model_save_interval: int) -> NamedTuple(
     'train_outputs',
     [
         ('data_ref_paths', List)
@@ -91,10 +91,10 @@ def train(data_base_path: str, current_data_path: str) -> NamedTuple(
         "log_interval": 100,
         "pitch_min": -1.9287127187455897,
         "energy_min": -1.375638484954834,
-        "batch_size": 8,
-        "save_interval": 100,
+        # "batch_size": 8,
+        # "save_interval": 100,
         "num_workers": 4,
-        "max_step": 201,
+        # "max_step": 201,
 
         "metadata_path": "./metadata",
         "global_optimal_checkpoint_stat_path": "./global-optimal-checkpoint-status.json",
@@ -115,6 +115,10 @@ def train(data_base_path: str, current_data_path: str) -> NamedTuple(
     
     previous_data_refs = []
     pretrained_checkpoint_path = None
+    preprocessed_paths = [str(current_preprocessed_path)]
+    current_preprocessed_finished_path = current_data_path.parent / '-'.join(current_data_path.stem.split('-')[:-1]) / config['preprocessed_path']
+    finished_preprocessed_paths = [str(current_preprocessed_finished_path)]
+
     global_optimal_checkpoint_path = data_base_path / config['fs2_base_path'] / config['metadata_path'] / config['global_optimal_checkpoint_stat_path']
     if global_optimal_checkpoint_path.exists():
         with open(f'{global_optimal_checkpoint_path}', 'r') as f:
@@ -125,6 +129,7 @@ def train(data_base_path: str, current_data_path: str) -> NamedTuple(
         
         with open(os.path.join(previous_checkpoint_base_path, config['data_refs_filename']), 'r') as f:
             previous_data_refs = json.load(f)
+            finished_preprocessed_paths.extend(previous_data_refs)
         
         search_path_pattern=f'{data_base_path / config["fs2_base_path"] / config["fs2_data_base_path"]}' + '/*/' + config["preprocessed_path"]
         search_path_filter_regex=re.compile(config["data_intermediate_regex"])
@@ -137,17 +142,19 @@ def train(data_base_path: str, current_data_path: str) -> NamedTuple(
             print(f'INFO: {rest_preprocessed_paths}')
             print(f'INFO: set these to additional load path')
 
-    preprocessed_paths = [str(current_preprocessed_path)] + rest_preprocessed_paths
+            preprocessed_paths.extend(rest_preprocessed_paths)
+            # finished_preprocessed_paths.extend(rest_preprocessed_paths)
 
-    main(pretrained_path=pretrained_checkpoint_path,
+    main(pretrained_path=pretrained_checkpoint_path, max_step=train_max_step, batch_size=batch_size, 
+         save_interval=model_save_interval,
          preprocessed_paths=preprocessed_paths,
          **parse_kwargs(main, **config))
 
-    current_preprocessed_finished_path = current_data_path.parent / '-'.join(current_data_path.stem.split('-')[:-1]) / config['preprocessed_path']
-    finished_preprocessed_paths = [str(current_preprocessed_finished_path)] + rest_preprocessed_paths
+    # current_preprocessed_finished_path = current_data_path.parent / '-'.join(current_data_path.stem.split('-')[:-1]) / config['preprocessed_path']
+    # finished_preprocessed_paths = [str(current_preprocessed_finished_path)] + rest_preprocessed_paths
 
     with open(f'{current_data_path / config["data_refs_filename"]}', 'w') as f:
-        json.dump(finished_preprocessed_paths + previous_data_refs, f, indent=2)
+        json.dump(finished_preprocessed_paths, f, indent=2)
 
     from collections import namedtuple
     train_outputs = namedtuple(

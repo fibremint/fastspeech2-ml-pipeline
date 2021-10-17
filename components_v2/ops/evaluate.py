@@ -1,7 +1,7 @@
 from typing import List, NamedTuple
 
 
-def evaluate(current_data_path: str, data_ref_paths: List) -> NamedTuple(
+def evaluate(current_data_path: str, data_ref_paths: List, eval_max_step: int, batch_size: int) -> NamedTuple(
     'evaluate_outputs',
     [
         ('train_finished_data_path', str)
@@ -89,9 +89,9 @@ def evaluate(current_data_path: str, data_ref_paths: List) -> NamedTuple(
         "log_interval": 100,
         "pitch_min": -1.9287127187455897,
         "energy_min": -1.375638484954834,
-        "batch_size": 8,
+        # "batch_size": 8,
         "save_interval": 100,
-        "max_step": 10,
+        # "max_step": 10,
 
         "checkpoint_stat_path": './checkpoint-status.json',
         "optimal_checkpoint_stat_path": "./optimal-checkpoint-status.json"
@@ -106,7 +106,8 @@ def evaluate(current_data_path: str, data_ref_paths: List) -> NamedTuple(
     config['save_dir'] = current_data_path / config['save_dir']
     # config['pretrained_path'] = current_data_path / config['save_dir'] / 'models' / config['save_prefix'] / 'FastSpeech2'
 
-    evaluated_stats = main(preprocessed_paths=data_ref_paths, **parse_kwargs(main, **config))
+    evaluated_stats = main(preprocessed_paths=data_ref_paths, max_step=eval_max_step, batch_size=batch_size,
+                           **parse_kwargs(main, **config))
 
     optimal_checkpoint_path, optimal_checkpoint_loss = sorted(evaluated_stats.items(), key=operator.itemgetter(1))[0]
     optimal_checkpoint = {

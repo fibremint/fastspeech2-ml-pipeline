@@ -16,7 +16,7 @@ def print_op(msg) -> None:
 def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_image_prefix, storage_mount_path, compiled_component_output_path):
     # TODO: train, eval with argument
     @dsl.pipeline(name='fs2 fine tuning')
-    def pipeline():
+    def pipeline(train_max_step: int = 1000, eval_max_step: int = 1000, batch_size: int = 8, model_save_interval: int = 200):
         ops = load_ops(docker_hub_usename=docker_hub_username,
                        docker_image_prefix=docker_image_prefix)
 
@@ -25,7 +25,7 @@ def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_ima
         init_workflow_task.add_pvolumes({
             storage_mount_path: dsl.PipelineVolume(pvc=storage_pvc_name)
         })
-        with dsl.Condition(init_workflow_task.outputs['is_new_data_exist'] == True, name='New data exists'):
+        with dsl.Condition(init_workflow_task.outputs['is_new_data_exist'] == True, name='new-data-exists'):
             # prepare align
             prepare_align_task = ops.prepare_align(current_data_path=init_workflow_task.outputs['current_data_path'],
                                                    dataset_name='vctk')
@@ -49,14 +49,17 @@ def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_ima
             preprocess_task.after(mfa_align_task)
             # train
             train_task = ops.train(data_base_path=storage_mount_path,
-                                   current_data_path=init_workflow_task.outputs['current_data_path'])
+                                   current_data_path=init_workflow_task.outputs['current_data_path'],
+                                   train_max_step=train_max_step, batch_size=batch_size, model_save_interval=model_save_interval)
             train_task.add_pvolumes({
                 storage_mount_path: dsl.PipelineVolume(pvc=storage_pvc_name)
             })
             train_task.set_gpu_limit(1)
             train_task.after(preprocess_task)
             # evaluate
-            evaluate_task = ops.evaluate(current_data_path=init_workflow_task.outputs['current_data_path'])
+            evaluate_task = ops.evaluate(current_data_path=init_workflow_task.outputs['current_data_path'],
+                                         data_ref_paths=train_task.outputs['data_ref_paths'],
+                                         eval_max_step=eval_max_step, batch_size=batch_size)
             evaluate_task.add_pvolumes({
                 storage_mount_path: dsl.PipelineVolume(pvc=storage_pvc_name)
             })
@@ -70,7 +73,7 @@ def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_ima
             })
             check_deployable_task.after(evaluate_task)
 
-            with dsl.Condition(check_deployable_task.output == True, name='Is optimal than before'):
+            with dsl.Condition(check_deployable_task.output == True, name='is-optimal-than-before'):
                 # update optimal checkpoint
                 update_optimal_checkpoint = ops.update_optimal_checkpoint(data_base_path=storage_mount_path,
                                                                           target_data_path=evaluate_task.outputs['train_finished_data_path'])
@@ -93,11 +96,11 @@ def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_ima
                 deploy_task.after(export_model_task)
 
 
-            with dsl.Condition(check_deployable_task.output == False, 'Is not optimal than before'):
+            with dsl.Condition(check_deployable_task.output == False, 'is-not-optimal-than-before'):
                 print_op('trained model is not optimal than previously deployed one.')
 
 
-        with dsl.Condition(init_workflow_task.outputs['is_new_data_exist'] == False, name='Is not new data exists'):
+        with dsl.Condition(init_workflow_task.outputs['is_new_data_exist'] == False, name='is-not-new-data-exists'):
             print_op('new data is not exist. aborted.')
 
     compiler.Compiler().compile(pipeline_func=pipeline, package_path=compiled_component_output_path)
