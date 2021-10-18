@@ -4,7 +4,7 @@ from typing import List, NamedTuple
 
 from torch.utils import data
 
-def train(data_base_path: str, current_data_path: str, train_max_step: int, batch_size: int, model_save_interval: int) -> NamedTuple(
+def train(data_base_path: str, current_data_path: str, train_epoch: int, batch_size: int, number_of_model_save_per_epoch: int) -> NamedTuple(
     'train_outputs',
     [
         ('data_ref_paths', List)
@@ -36,8 +36,8 @@ def train(data_base_path: str, current_data_path: str, train_max_step: int, batc
             pitch_feature: str = 'phoneme', energy_feature: str = 'phoneme',
             pitch_min: float = 0., energy_min: float = 0.,
             lr: float = 2e-4, weight_decay: float = 0.0001, betas=(0.9, 0.98),
-            max_step: int = 400000, group_size: int = 4,
-            save_interval: int = 10000, log_interval: int = 50, grad_clip: float = 0.0, grad_norm: float = 5.0,
+            train_epoch: int = 0, group_size: int = 4,
+            number_of_model_save_per_epoch: int = 0, log_interval: int = 50, grad_clip: float = 0.0, grad_norm: float = 5.0,
             milestones: Tuple[int] = None, gamma: float = 0.2, sr: int = 22050, seed: int = 2021,
             is_reference: bool = False):
         # create model
@@ -54,13 +54,15 @@ def train(data_base_path: str, current_data_path: str, train_max_step: int, batc
         else:
             scheduler = None
 
-        save_dir = current_data_path / save_dir
+        # save_dir = current_data_path / save_dir
 
         dataset = Dataset(train_path, preprocessed_paths, pitch_min=pitch_min, energy_min=energy_min,
                         text_cleaners=['english_cleaners'],
                         batch_size=batch_size, sort=True, drop_last=True, is_reference=is_reference)
 
         print(f'INFO: length of data: {len(dataset)}')
+        train_max_step = len(dataset) * train_epoch
+        save_interval = len(dataset) // number_of_model_save_per_epoch
 
         train_loader = DataLoader(
             dataset,
@@ -74,7 +76,7 @@ def train(data_base_path: str, current_data_path: str, train_max_step: int, batc
         Trainer(
             model, optimizer,
             train_loader, None,
-            max_step=max_step, save_interval=save_interval,
+            max_step=train_max_step, save_interval=save_interval,
             log_interval=log_interval, pitch_feature=pitch_feature, energy_feature=energy_feature,
             save_dir=save_dir, save_prefix=save_prefix, grad_clip=grad_clip, grad_norm=grad_norm,
             pretrained_path=pretrained_path, sr=sr,
@@ -110,12 +112,13 @@ def train(data_base_path: str, current_data_path: str, train_max_step: int, batc
     torch.backends.cudnn.benchmark = True
     torch.multiprocessing.set_sharing_strategy('file_system')
 
-    previous_data_refs = []
     pretrained_checkpoint_path = None
+
+    current_data_path_instance = Path(paths['current_data'])
+    current_preprocessed_finished_path = current_data_path_instance.parent / '-'.join(current_data_path_instance.stem.split('-')[:-1]) / config['preprocessed_path']
+
     preprocessed_paths = [paths['preprocessed']]
-    current_data_path = Path(paths['current_data'])
-    current_preprocessed_finished_path = current_data_path.parent / '-'.join(current_data_path.stem.split('-')[:-1]) / config['preprocessed_path']
-    finished_preprocessed_paths = [str(current_preprocessed_finished_path)]
+    data_refs = [str(current_preprocessed_finished_path)]
 
     if Path(paths['global_optimal_checkpoint_status']).exists():
         with open(paths['global_optimal_checkpoint_status'], 'r') as f:
@@ -127,12 +130,12 @@ def train(data_base_path: str, current_data_path: str, train_max_step: int, batc
         previous_checkpoint_paths = get_paths(base_path=data_base_path, current_data_path=previous_checkpoint_base_path)
         with open(previous_checkpoint_paths['train_eval_data_refs'], 'r') as f:
             previous_data_refs = json.load(f)
-            finished_preprocessed_paths.extend(previous_data_refs)
+            data_refs.extend(previous_data_refs)
         
         search_path_pattern = paths['data'] + '/*/' + config["preprocessed_path"]
         search_path_filter_regex = re.compile(config["data_intermediate_regex"])
         rest_preprocessed_paths = get_rest_path_from(search_path_pattern=search_path_pattern,
-                                                     exclude_paths=previous_data_refs,
+                                                     exclude_paths=previous_data_refs + [current_data_path],
                                                      search_path_filter_regex=search_path_filter_regex)
 
         if rest_preprocessed_paths:
@@ -141,15 +144,16 @@ def train(data_base_path: str, current_data_path: str, train_max_step: int, batc
             print(f'INFO: set these to additional load path')
 
             preprocessed_paths.extend(rest_preprocessed_paths)
+            data_refs.extend(rest_preprocessed_paths)
 
-    main(pretrained_path=pretrained_checkpoint_path, max_step=train_max_step, batch_size=batch_size, 
-         save_interval=model_save_interval,
+    main(pretrained_path=pretrained_checkpoint_path, train_epoch=train_epoch, batch_size=batch_size, 
+         number_of_model_save_per_epoch=number_of_model_save_per_epoch,
          preprocessed_paths=preprocessed_paths,
          save_dir=paths['train_output'],
          **parse_kwargs(main, **config))
 
     with open(paths['train_eval_data_refs'], 'w') as f:
-        json.dump(finished_preprocessed_paths, f, indent=2)
+        json.dump(data_refs, f, indent=2)
 
     from collections import namedtuple
     train_outputs = namedtuple(
@@ -161,5 +165,5 @@ def train(data_base_path: str, current_data_path: str, train_max_step: int, batc
 
 
 if __name__ == '__main__':
-    res = train('/local-storage', '/local-storage/fs2-data/data/20211016-031309-intermediate', train_max_step=10, batch_size=8, model_save_interval=10)
+    res = train('/local-storage', '/local-storage/fs2-data/data/20211017-191719-intermediate', train_epoch=1, batch_size=8, number_of_model_save_per_epoch=1)
     print(res)

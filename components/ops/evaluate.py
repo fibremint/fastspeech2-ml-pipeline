@@ -1,7 +1,7 @@
 from typing import List, NamedTuple
 
 
-def evaluate(data_base_path: str, current_data_path: str, data_ref_paths: List, eval_max_step: int, batch_size: int) -> NamedTuple(
+def evaluate(data_base_path: str, current_data_path: str, data_ref_paths: List, batch_size: int) -> NamedTuple(
     'evaluate_outputs',
     [
         ('train_finished_data_path', str)
@@ -35,8 +35,8 @@ def evaluate(data_base_path: str, current_data_path: str, data_ref_paths: List, 
             pitch_feature: str = 'phoneme', energy_feature: str = 'phoneme',
             pitch_min: float = 0., energy_min: float = 0.,
             lr: float = 2e-4, weight_decay: float = 0.0001, betas=(0.9, 0.98),
-            max_step: int = 1000, group_size: int = 4,
-            save_interval: int = 10000, log_interval: int = 50, grad_clip: float = 0.0, grad_norm: float = 5.0,
+            max_step: int = 0, group_size: int = 4,
+            save_interval: int = 0, log_interval: int = 50, grad_clip: float = 0.0, grad_norm: float = 5.0,
             milestones: Tuple[int] = None, gamma: float = 0.2, sr: int = 22050, seed: int = 2021,
             is_reference: bool = False):
             
@@ -59,6 +59,7 @@ def evaluate(data_base_path: str, current_data_path: str, data_ref_paths: List, 
                         batch_size=batch_size, sort=True, drop_last=True, is_reference=is_reference)
 
         print(f'INFO: length of data: {len(dataset)}')
+        max_step_per_checkpoint = len(dataset)
 
         eval_loader = DataLoader(
             dataset,
@@ -72,7 +73,7 @@ def evaluate(data_base_path: str, current_data_path: str, data_ref_paths: List, 
         evaluted_stats = Evaluator(
             model, optimizer,
             None, eval_loader,
-            max_step=max_step, save_interval=save_interval,
+            max_step=max_step_per_checkpoint, save_interval=save_interval,
             log_interval=log_interval, pitch_feature=pitch_feature, energy_feature=energy_feature,
             save_dir=train_output, save_prefix=save_prefix, grad_clip=grad_clip, grad_norm=grad_norm,
             pretrained_path=pretrained_path, sr=sr,
@@ -104,7 +105,7 @@ def evaluate(data_base_path: str, current_data_path: str, data_ref_paths: List, 
     torch.backends.cudnn.benchmark = True
     torch.multiprocessing.set_sharing_strategy('file_system')
 
-    evaluated_stats = main(preprocessed_paths=data_ref_paths, max_step=eval_max_step, batch_size=batch_size,
+    evaluated_stats = main(preprocessed_paths=data_ref_paths, batch_size=batch_size,
                            train_output=paths['train_output'],
                            **parse_kwargs(main, **config))
 
@@ -135,14 +136,11 @@ def evaluate(data_base_path: str, current_data_path: str, data_ref_paths: List, 
 
 if __name__ == '__main__':
     res = evaluate(data_base_path='/local-storage', 
-                   current_data_path='/opt/storage/fs2-data/data/20211017-111713-intermediate', 
-                   eval_max_step=10,
+                   current_data_path='/local-storage/fs2-data/data/20211017-191719-intermediate', 
                    batch_size=8,
                    data_ref_paths=[
 
-  "/opt/storage/fs2-data/data/20211017-111713-intermediate/preprocessed",
-  "/opt/storage/fs2-data/data/20211016-192849/preprocessed",
-  "/opt/storage/fs2-data/data/20211017-012441/preprocessed"
+'/local-storage/fs2-data/data/20211017-191719-intermediate/preprocessed'
 
 ])
     print(res)

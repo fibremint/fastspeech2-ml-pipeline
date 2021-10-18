@@ -15,7 +15,7 @@ def print_op(msg) -> None:
 
 def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_image_prefix, storage_mount_path, compiled_component_output_path):
     @dsl.pipeline(name='fs2 fine tuning')
-    def pipeline(train_max_step: int = 5000, eval_max_step: int = 200, batch_size: int = 8, model_save_interval: int = 100):
+    def pipeline(train_epoch: int = 5, batch_size: int = 8, number_of_model_save_per_epoch: int = 5):
         ops = load_ops(docker_hub_usename=docker_hub_username,
                        docker_image_prefix=docker_image_prefix)
 
@@ -50,7 +50,9 @@ def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_ima
             # train
             train_task = ops.train(data_base_path=storage_mount_path,
                                    current_data_path=init_workflow_task.outputs['current_data_path'],
-                                   train_max_step=train_max_step, batch_size=batch_size, model_save_interval=model_save_interval)
+                                   train_epoch=train_epoch,
+                                   batch_size=batch_size,
+                                   number_of_model_save_per_epoch=number_of_model_save_per_epoch)
             train_task.add_pvolumes({
                 storage_mount_path: dsl.PipelineVolume(pvc=storage_pvc_name)
             })
@@ -60,7 +62,7 @@ def build_fine_tuning_pipeline(docker_hub_username, storage_pvc_name, docker_ima
             evaluate_task = ops.evaluate(data_base_path=storage_mount_path,
                                          current_data_path=init_workflow_task.outputs['current_data_path'],
                                          data_ref_paths=train_task.outputs['data_ref_paths'],
-                                         eval_max_step=eval_max_step, batch_size=batch_size)
+                                         batch_size=batch_size)
             evaluate_task.add_pvolumes({
                 storage_mount_path: dsl.PipelineVolume(pvc=storage_pvc_name)
             })
