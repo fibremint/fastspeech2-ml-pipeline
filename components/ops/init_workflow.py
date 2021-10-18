@@ -24,7 +24,8 @@ def init_workflow(data_base_path: str) -> NamedTuple(
         'fs2_base_path': './fs2-data',
         'fs2_data_path': './data',
         'fs2_data_relpaths_filename': 'data-relpaths.json',
-        'fs2_dupl_data_relpaths_filename': 'data-dupl-relpaths.json'
+        'fs2_dupl_data_relpaths_filename': 'data-dupl-relpaths.json',
+        'container_default_data_path': '/workspace/default-data'
     }
 
     from collections import namedtuple
@@ -33,10 +34,16 @@ def init_workflow(data_base_path: str) -> NamedTuple(
         ['current_data_path', 'is_new_data_exist']
     )
 
+    container_data_paths = get_paths(base_path=configs['container_default_data_path'])
     paths = get_paths(base_path=data_base_path)
 
-    if not Path(paths['fs2_base']).exists():
-        sys.exit('ERR: base path is not exists')
+    # if not Path(paths['fs2_base']).exists():
+    #     sys.exit('ERR: base path is not exists')
+    os.makedirs(paths['fs2_base'], exist_ok=True)
+
+    if not Path(paths['lexicon']).exists():
+        os.makedirs(paths['lexicons'], exist_ok=True)
+        shutil.copy(container_data_paths['lexicon'], paths['lexicons'])
 
     raw_data_path = Path(data_base_path) / configs['raw_data_path']
     is_new_data_exist = raw_data_path.exists()
